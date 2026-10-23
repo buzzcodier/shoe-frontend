@@ -1,14 +1,18 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { registerSW } from "virtual:pwa-register";
+import { useRegisterSW } from "virtual:pwa-register/react";
 import App from "./App";
 import "./index.css";
 
-// Register the service worker — handles install, update, offline cache
-registerSW({ immediate: true });
+function PWAUpdater() {
+  // Register the service worker — handles install, update, offline cache
+  useRegisterSW({ immediate: true });
+  return null;
+}
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
+    <PWAUpdater />
     <App />
   </React.StrictMode>
 );
