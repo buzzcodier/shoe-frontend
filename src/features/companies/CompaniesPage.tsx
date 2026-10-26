@@ -22,9 +22,11 @@ import {
 } from "../../components/ui/table";
 import ConfirmDialog from "../../components/ConfirmDialog";
 import CompanyForm from "./CompanyForm";
+import { useOnlineStatus } from "../../hooks/useOnlineStatus";
 
 export default function CompaniesPage() {
   const qc = useQueryClient();
+  const online = useOnlineStatus();
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Company | null>(null);
 
@@ -70,21 +72,30 @@ export default function CompaniesPage() {
     <div className="p-4 md:p-8 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Companies</h1>
+          <h1 className="text-2xl font-semibold flex items-center gap-2">
+            Companies
+            {!online && (
+              <span className="text-xs font-normal text-amber-700 bg-amber-100 border border-amber-200 rounded px-2 py-0.5">
+                Read-only
+              </span>
+            )}
+          </h1>
           <p className="text-muted-foreground text-sm">
             Brands and manufacturers you stock.
           </p>
         </div>
-        <Button
-          onClick={() => {
-            setEditing(null);
-            setFormOpen(true);
-          }}
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          <span className="hidden sm:inline">New company</span>
-          <span className="sm:hidden">New</span>
-        </Button>
+        {online && (
+          <Button
+            onClick={() => {
+              setEditing(null);
+              setFormOpen(true);
+            }}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            <span className="hidden sm:inline">New company</span>
+            <span className="sm:hidden">New</span>
+          </Button>
+        )}
       </div>
 
       {/* ---------- DESKTOP TABLE ---------- */}
@@ -125,25 +136,31 @@ export default function CompaniesPage() {
                 <TableCell>{c.email || "—"}</TableCell>
                 <TableCell className="text-right">{c.shoe_count}</TableCell>
                 <TableCell className="text-right">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => {
-                      setEditing(c);
-                      setFormOpen(true);
-                    }}
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <ConfirmDialog
-                    title={`Delete "${c.name}"?`}
-                    description="This cannot be undone. Companies in use by shoes can't be deleted."
-                    onConfirm={() => deleteMut.mutateAsync(c.id)}
-                  >
-                    <Button variant="ghost" size="icon">
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </ConfirmDialog>
+                  {online ? (
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          setEditing(c);
+                          setFormOpen(true);
+                        }}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <ConfirmDialog
+                        title={`Delete "${c.name}"?`}
+                        description="This cannot be undone. Companies in use by shoes can't be deleted."
+                        onConfirm={() => deleteMut.mutateAsync(c.id)}
+                      >
+                        <Button variant="ghost" size="icon">
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </ConfirmDialog>
+                    </>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">—</span>
+                  )}
                 </TableCell>
               </TableRow>
             ))}
@@ -174,28 +191,30 @@ export default function CompaniesPage() {
                   </div>
                 )}
               </div>
-              <div className="flex gap-1 shrink-0">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8"
-                  onClick={() => {
-                    setEditing(c);
-                    setFormOpen(true);
-                  }}
-                >
-                  <Pencil className="h-4 w-4" />
-                </Button>
-                <ConfirmDialog
-                  title={`Delete "${c.name}"?`}
-                  description="This cannot be undone. Companies in use by shoes can't be deleted."
-                  onConfirm={() => deleteMut.mutateAsync(c.id)}
-                >
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                    <Trash2 className="h-4 w-4 text-destructive" />
+              {online && (
+                <div className="flex gap-1 shrink-0">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => {
+                      setEditing(c);
+                      setFormOpen(true);
+                    }}
+                  >
+                    <Pencil className="h-4 w-4" />
                   </Button>
-                </ConfirmDialog>
-              </div>
+                  <ConfirmDialog
+                    title={`Delete "${c.name}"?`}
+                    description="This cannot be undone. Companies in use by shoes can't be deleted."
+                    onConfirm={() => deleteMut.mutateAsync(c.id)}
+                  >
+                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </ConfirmDialog>
+                </div>
+              )}
             </div>
             {(c.phone || c.email) && (
               <div className="mt-2 text-xs text-muted-foreground space-y-0.5">

@@ -7,6 +7,7 @@ import {
 } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchMe, isAuthenticated, logout as apiLogout, type Me } from "../../api/auth";
+import { CACHE_KEYS, getCache } from "@/lib/cache";
 
 
 type AuthContextType = {
@@ -46,14 +47,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const { data: user, isLoading } = useQuery({
-    queryKey: ["me"],
-    queryFn: fetchMe,
-    enabled: hasToken,
-    retry: false,
-    staleTime: Infinity,
-  });
-
+const { data: user, isLoading } = useQuery({
+  queryKey: ["me"],
+  queryFn: async () => {
+    try {
+      const me = await fetchMe();
+      localStorage.setItem(CACHE_KEYS.user, JSON.stringify(me));
+      return me;
+    } catch (err: any) {
+      // Network error → fall back to cached user
+      if (!err.response) {
+        const cached = getCache<Me>(CACHE_KEYS.user);
+        if (cached) return cached;
+      }
+      throw err;
+    }
+  },
+  enabled: hasToken,
+  retry: false,
+  staleTime: Infinity,
+});
   const logout = () => {
     apiLogout();
     qc.clear();

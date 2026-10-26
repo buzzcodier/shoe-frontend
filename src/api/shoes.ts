@@ -45,16 +45,39 @@ export type ShoePayload = {
   active?: boolean;
 };
 
+import { CACHE_KEYS, getCache, setCache } from "@/lib/cache";
+
+// ... existing types ...
+
 export async function listShoes(): Promise<Shoe[]> {
-  const { data } = await api.get("/shoes/shoes/");
-  return data.results ?? data;
+  try {
+    const { data } = await api.get("/shoes/shoes/");
+    const shoes = data.results ?? data;
+    setCache(CACHE_KEYS.shoes, shoes);
+    return shoes;
+  } catch (err: any) {
+    // Network error (no response) → fall back to cache
+    if (!err.response) {
+      const cached = getCache<Shoe[]>(CACHE_KEYS.shoes);
+      if (cached) return cached;
+    }
+    throw err;
+  }
 }
 
 export async function getShoe(id: number): Promise<Shoe> {
-  const { data } = await api.get(`/shoes/shoes/${id}/`);
-  return data;
+  try {
+    const { data } = await api.get(`/shoes/shoes/${id}/`);
+    return data;
+  } catch (err: any) {
+    if (!err.response) {
+      const cached = getCache<Shoe[]>(CACHE_KEYS.shoes);
+      const found = cached?.find((s) => s.id === id);
+      if (found) return found;
+    }
+    throw err;
+  }
 }
-
 export async function createShoe(payload: ShoePayload) {
   const { data } = await api.post("/shoes/shoes/", payload);
   return data as Shoe;

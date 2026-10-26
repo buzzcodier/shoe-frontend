@@ -1,7 +1,5 @@
-
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-
 
 import {
   getBestSellers,
@@ -13,7 +11,7 @@ import {
   getLowStock,
 } from "../../api/reports";
 import MetricCard from "../../components/MetricCard";
-import { Badge } from "../..//components/ui/badge";
+import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
@@ -34,11 +32,14 @@ import {
 } from "../../components/ui/table";
 import { formatKsh } from "../../lib/format";
 import { Banknote, TrendingUp, ShoppingBag, Coins } from "lucide-react";
+import OfflineNotice from "../../components/OfflineNotice";
+import { useOnlineStatus } from "../../hooks/useOnlineStatus";
 
 type Tab = "sales" | "products" | "cashiers" | "stock";
 
 export default function ReportsPage() {
   const [tab, setTab] = useState<Tab>("sales");
+  const online = useOnlineStatus();
 
   // Date range — defaults to last 30 days
   const today = new Date();
@@ -53,42 +54,51 @@ export default function ReportsPage() {
   const summaryQuery = useQuery({
     queryKey: ["reports-summary", start, end],
     queryFn: () => getSalesSummary(start, end),
+    enabled: online,
   });
 
   const bestSellersQuery = useQuery({
     queryKey: ["reports-best-sellers", start, end],
     queryFn: () => getBestSellers(start, end, 10),
+    enabled: online,
   });
 
   const bestSizesQuery = useQuery({
     queryKey: ["reports-best-sizes", start, end],
     queryFn: () => getBestSizes(start, end, 10),
+    enabled: online,
   });
 
   const byCashierQuery = useQuery({
     queryKey: ["reports-by-cashier", start, end],
     queryFn: () => getByCashier(start, end),
+    enabled: online,
   });
 
   const byPaymentQuery = useQuery({
     queryKey: ["reports-by-payment", start, end],
     queryFn: () => getByPayment(start, end),
+    enabled: online,
   });
 
   const stockValueQuery = useQuery({
     queryKey: ["reports-stock-value"],
     queryFn: getStockValue,
+    enabled: online,
   });
 
   const lowStockQuery = useQuery({
     queryKey: ["reports-low-stock"],
     queryFn: () => getLowStock(50),
+    enabled: online,
   });
 
   const summary = summaryQuery.data;
 
+  if (!online) return <OfflineNotice pageName="Reports" />;
+
   return (
-    <div className="p-8 space-y-6">
+    <div className="p-4 md:p-8 space-y-6">
       <div>
         <h1 className="text-2xl font-semibold">Reports</h1>
         <p className="text-muted-foreground text-sm">
@@ -166,7 +176,7 @@ export default function ReportsPage() {
       )}
 
       {/* Tabs */}
-      <div className="flex gap-2 border-b">
+      <div className="flex gap-2 border-b overflow-x-auto">
         {[
           { key: "sales", label: "Sales" },
           { key: "products", label: "Products" },
@@ -176,7 +186,7 @@ export default function ReportsPage() {
           <button
             key={t.key}
             onClick={() => setTab(t.key as Tab)}
-            className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
+            className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors whitespace-nowrap ${
               tab === t.key
                 ? "border-primary text-primary"
                 : "border-transparent text-muted-foreground hover:text-foreground"
@@ -336,7 +346,9 @@ export default function ReportsPage() {
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Stock value</CardTitle>
-              <CardDescription>Current value of everything on the shelf.</CardDescription>
+              <CardDescription>
+                Current value of everything on the shelf.
+              </CardDescription>
             </CardHeader>
             <CardContent>
               {stockValueQuery.data && (
@@ -360,7 +372,9 @@ export default function ReportsPage() {
                     </span>
                   </div>
                   <div className="flex justify-between text-sm pt-2 border-t">
-                    <span className="text-muted-foreground">Potential profit</span>
+                    <span className="text-muted-foreground">
+                      Potential profit
+                    </span>
                     <span className="font-semibold text-green-600">
                       {formatKsh(
                         (

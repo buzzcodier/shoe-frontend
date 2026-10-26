@@ -22,6 +22,9 @@ import { useAuth } from "../../features/auth/AuthContext";
 import { Button } from "../../components/ui/button";
 import { Separator } from "../../components/ui/separator";
 
+import { useOnlineStatus } from "@/hooks/useOnlineStatus";
+import { formatLastSync } from "@/lib/cache";
+
 type Role = "OWNER" | "MANAGER" | "CASHIER" | "STOCK_MANAGER";
 
 type NavItem = {
@@ -44,6 +47,7 @@ const NAV: NavItem[] = [
   { to: "/reports", label: "Reports", icon: BarChart3, roles: ["OWNER", "MANAGER"] },
   { to: "/users", label: "Users", icon: Users, roles: ["OWNER"] },
 ];
+const online = useOnlineStatus();
 
 export default function AppShell() {
   const { user, logout } = useAuth();
@@ -152,9 +156,18 @@ export default function AppShell() {
           <h1 className="text-base font-semibold">Shop Manager</h1>
         </div>
 
-        <main className="flex-1 bg-muted/20 min-w-0">
-          <Outlet />
-        </main>
+   <main className="flex-1 bg-muted/20 min-w-0">
+  {!online && (
+    <div className="bg-amber-100 border-b border-amber-300 text-amber-900 text-xs sm:text-sm px-3 sm:px-4 py-2 text-center">
+      <span className="font-medium">⚠ Offline</span>
+      <span className="mx-2 opacity-60">·</span>
+      Browsing only — sales can't be recorded
+      <span className="mx-2 opacity-60">·</span>
+      Data from {formatLastSync()}
+    </div>
+  )}
+  <Outlet />
+</main>
       </div>
     </div>
   );

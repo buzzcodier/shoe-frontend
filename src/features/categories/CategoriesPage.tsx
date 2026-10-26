@@ -22,9 +22,11 @@ import {
 } from "../../components/ui/table";
 import ConfirmDialog from "../../components/ConfirmDialog";
 import CategoryForm from "./CategoryForm";
+import { useOnlineStatus } from "../../hooks/useOnlineStatus";
 
 export default function CategoriesPage() {
   const qc = useQueryClient();
+  const online = useOnlineStatus();
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Category | null>(null);
 
@@ -81,16 +83,25 @@ export default function CategoriesPage() {
     <div className="p-4 md:p-8 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Categories</h1>
+          <h1 className="text-2xl font-semibold flex items-center gap-2">
+            Categories
+            {!online && (
+              <span className="text-xs font-normal text-amber-700 bg-amber-100 border border-amber-200 rounded px-2 py-0.5">
+                Read-only
+              </span>
+            )}
+          </h1>
           <p className="text-muted-foreground text-sm">
             Group shoes by type (Men, Women, Sports, …)
           </p>
         </div>
-        <Button onClick={openCreate}>
-          <Plus className="h-4 w-4 mr-2" />
-          <span className="hidden sm:inline">New category</span>
-          <span className="sm:hidden">New</span>
-        </Button>
+        {online && (
+          <Button onClick={openCreate}>
+            <Plus className="h-4 w-4 mr-2" />
+            <span className="hidden sm:inline">New category</span>
+            <span className="sm:hidden">New</span>
+          </Button>
+        )}
       </div>
 
       {/* ---------- DESKTOP TABLE ---------- */}
@@ -129,22 +140,28 @@ export default function CategoriesPage() {
                 </TableCell>
                 <TableCell className="text-right">{c.shoe_count}</TableCell>
                 <TableCell className="text-right">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => openEdit(c)}
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <ConfirmDialog
-                    title={`Delete "${c.name}"?`}
-                    description="This cannot be undone. Categories in use by shoes can't be deleted."
-                    onConfirm={() => deleteMut.mutateAsync(c.id)}
-                  >
-                    <Button variant="ghost" size="icon">
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </ConfirmDialog>
+                  {online ? (
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => openEdit(c)}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <ConfirmDialog
+                        title={`Delete "${c.name}"?`}
+                        description="This cannot be undone. Categories in use by shoes can't be deleted."
+                        onConfirm={() => deleteMut.mutateAsync(c.id)}
+                      >
+                        <Button variant="ghost" size="icon">
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </ConfirmDialog>
+                    </>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">—</span>
+                  )}
                 </TableCell>
               </TableRow>
             ))}
@@ -175,25 +192,27 @@ export default function CategoriesPage() {
                   </div>
                 )}
               </div>
-              <div className="flex gap-1 shrink-0">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8"
-                  onClick={() => openEdit(c)}
-                >
-                  <Pencil className="h-4 w-4" />
-                </Button>
-                <ConfirmDialog
-                  title={`Delete "${c.name}"?`}
-                  description="This cannot be undone. Categories in use by shoes can't be deleted."
-                  onConfirm={() => deleteMut.mutateAsync(c.id)}
-                >
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                    <Trash2 className="h-4 w-4 text-destructive" />
+              {online && (
+                <div className="flex gap-1 shrink-0">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => openEdit(c)}
+                  >
+                    <Pencil className="h-4 w-4" />
                   </Button>
-                </ConfirmDialog>
-              </div>
+                  <ConfirmDialog
+                    title={`Delete "${c.name}"?`}
+                    description="This cannot be undone. Categories in use by shoes can't be deleted."
+                    onConfirm={() => deleteMut.mutateAsync(c.id)}
+                  >
+                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </ConfirmDialog>
+                </div>
+              )}
             </div>
             <div className="mt-2 pt-2 border-t text-xs text-muted-foreground">
               {c.shoe_count} shoe{c.shoe_count === 1 ? "" : "s"}

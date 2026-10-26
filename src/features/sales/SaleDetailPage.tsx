@@ -20,25 +20,30 @@ import {
   TableRow,
 } from "../../components/ui/table";
 import { formatKsh } from "../../lib/format";
+import OfflineNotice from "../../components/OfflineNotice";
+import { useOnlineStatus } from "../../hooks/useOnlineStatus";
 
 export default function SaleDetailPage() {
   const { id } = useParams<{ id: string }>();
   const saleId = Number(id);
   const navigate = useNavigate();
+  const online = useOnlineStatus();
 
   const { data: sale, isLoading, isError } = useQuery({
     queryKey: ["sale", saleId],
     queryFn: () => getSale(saleId),
-    enabled: Number.isFinite(saleId),
+    enabled: Number.isFinite(saleId) && online,
   });
 
+  if (!online) return <OfflineNotice pageName="Sale details" />;
+
   if (isLoading) {
-    return <div className="p-8 text-muted-foreground">Loading…</div>;
+    return <div className="p-4 md:p-8 text-muted-foreground">Loading…</div>;
   }
 
   if (isError || !sale) {
     return (
-      <div className="p-8 space-y-4">
+      <div className="p-4 md:p-8 space-y-4">
         <p className="text-destructive">Could not load sale.</p>
         <Button variant="outline" onClick={() => navigate("/sales")}>
           <ArrowLeft className="h-4 w-4 mr-2" />
@@ -49,7 +54,7 @@ export default function SaleDetailPage() {
   }
 
   return (
-    <div className="p-8 space-y-6">
+    <div className="p-4 md:p-8 space-y-6">
       <Link
         to="/sales"
         className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground"
@@ -58,7 +63,7 @@ export default function SaleDetailPage() {
         Back to sales
       </Link>
 
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between gap-2">
         <div>
           <h1 className="text-2xl font-semibold">Sale #{sale.id}</h1>
           <p className="text-muted-foreground text-sm">
@@ -104,7 +109,7 @@ export default function SaleDetailPage() {
         </Card>
       </div>
 
-      <div className="border rounded-md bg-card">
+      <div className="border rounded-md bg-card overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>

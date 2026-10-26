@@ -25,9 +25,12 @@ import {
 } from "../../components/ui/table";
 import UserForm from "./UserForm";
 import ResetPasswordDialog from "./ResetPasswordDialog";
+import OfflineNotice from "../../components/OfflineNotice";
+import { useOnlineStatus } from "../../hooks/useOnlineStatus";
 
 export default function UsersPage() {
   const qc = useQueryClient();
+  const online = useOnlineStatus();
   const { user: currentUser } = useAuth();
 
   const [formOpen, setFormOpen] = useState(false);
@@ -39,6 +42,7 @@ export default function UsersPage() {
   const { data: users = [], isLoading } = useQuery({
     queryKey: ["users"],
     queryFn: listUsers,
+    enabled: online,
   });
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ["users"] });
@@ -91,6 +95,8 @@ export default function UsersPage() {
     const full = `${u.first_name} ${u.last_name}`.trim();
     return full || u.username;
   };
+
+  if (!online) return <OfflineNotice pageName="Users" />;
 
   return (
     <div className="p-4 md:p-8 space-y-6">

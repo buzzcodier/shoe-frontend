@@ -18,12 +18,24 @@ export type CompanyPayload = {
   email?: string;
   address?: string;
 };
+import { CACHE_KEYS, getCache, setCache } from "@/lib/cache";
+
+// ... existing types ...
 
 export async function listCompanies(): Promise<Company[]> {
-  const { data } = await api.get("/shoes/companies/");
-  return data.results ?? data;
+  try {
+    const { data } = await api.get("/shoes/companies/");
+    const companies = data.results ?? data;
+    setCache(CACHE_KEYS.companies, companies);
+    return companies;
+  } catch (err: any) {
+    if (!err.response) {
+      const cached = getCache<Company[]>(CACHE_KEYS.companies);
+      if (cached) return cached;
+    }
+    throw err;
+  }
 }
-
 export async function createCompany(payload: CompanyPayload) {
   const { data } = await api.post("/shoes/companies/", payload);
   return data as Company;

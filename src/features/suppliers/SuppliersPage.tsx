@@ -22,9 +22,11 @@ import {
 } from "../../components/ui/table";
 import ConfirmDialog from "../../components/ConfirmDialog";
 import SupplierForm from "./SupplierForm";
+import { useOnlineStatus } from "../../hooks/useOnlineStatus";
 
 export default function SuppliersPage() {
   const qc = useQueryClient();
+  const online = useOnlineStatus();
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Supplier | null>(null);
 
@@ -69,21 +71,30 @@ export default function SuppliersPage() {
     <div className="p-4 md:p-8 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Suppliers</h1>
+          <h1 className="text-2xl font-semibold flex items-center gap-2">
+            Suppliers
+            {!online && (
+              <span className="text-xs font-normal text-amber-700 bg-amber-100 border border-amber-200 rounded px-2 py-0.5">
+                Read-only
+              </span>
+            )}
+          </h1>
           <p className="text-muted-foreground text-sm">
             Who you buy stock from.
           </p>
         </div>
-        <Button
-          onClick={() => {
-            setEditing(null);
-            setFormOpen(true);
-          }}
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          <span className="hidden sm:inline">New supplier</span>
-          <span className="sm:hidden">New</span>
-        </Button>
+        {online && (
+          <Button
+            onClick={() => {
+              setEditing(null);
+              setFormOpen(true);
+            }}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            <span className="hidden sm:inline">New supplier</span>
+            <span className="sm:hidden">New</span>
+          </Button>
+        )}
       </div>
 
       {/* ---------- DESKTOP TABLE ---------- */}
@@ -122,25 +133,31 @@ export default function SuppliersPage() {
                 <TableCell>{s.phone || "—"}</TableCell>
                 <TableCell className="text-right">{s.purchase_count}</TableCell>
                 <TableCell className="text-right">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => {
-                      setEditing(s);
-                      setFormOpen(true);
-                    }}
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <ConfirmDialog
-                    title={`Delete "${s.name}"?`}
-                    description="Suppliers with purchase history can't be deleted."
-                    onConfirm={() => deleteMut.mutateAsync(s.id)}
-                  >
-                    <Button variant="ghost" size="icon">
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </ConfirmDialog>
+                  {online ? (
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          setEditing(s);
+                          setFormOpen(true);
+                        }}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <ConfirmDialog
+                        title={`Delete "${s.name}"?`}
+                        description="Suppliers with purchase history can't be deleted."
+                        onConfirm={() => deleteMut.mutateAsync(s.id)}
+                      >
+                        <Button variant="ghost" size="icon">
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </ConfirmDialog>
+                    </>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">—</span>
+                  )}
                 </TableCell>
               </TableRow>
             ))}
@@ -171,28 +188,30 @@ export default function SuppliersPage() {
                   </div>
                 )}
               </div>
-              <div className="flex gap-1 shrink-0">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8"
-                  onClick={() => {
-                    setEditing(s);
-                    setFormOpen(true);
-                  }}
-                >
-                  <Pencil className="h-4 w-4" />
-                </Button>
-                <ConfirmDialog
-                  title={`Delete "${s.name}"?`}
-                  description="Suppliers with purchase history can't be deleted."
-                  onConfirm={() => deleteMut.mutateAsync(s.id)}
-                >
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                    <Trash2 className="h-4 w-4 text-destructive" />
+              {online && (
+                <div className="flex gap-1 shrink-0">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={() => {
+                      setEditing(s);
+                      setFormOpen(true);
+                    }}
+                  >
+                    <Pencil className="h-4 w-4" />
                   </Button>
-                </ConfirmDialog>
-              </div>
+                  <ConfirmDialog
+                    title={`Delete "${s.name}"?`}
+                    description="Suppliers with purchase history can't be deleted."
+                    onConfirm={() => deleteMut.mutateAsync(s.id)}
+                  >
+                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </ConfirmDialog>
+                </div>
+              )}
             </div>
 
             {(s.phone || s.email) && (

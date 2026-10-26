@@ -27,10 +27,12 @@ import {
 import ConfirmDialog from "../../components/ConfirmDialog";
 import { formatKsh } from "../../lib/format";
 import ShoeForm from "./ShoesForm";
+import { useOnlineStatus } from "../../hooks/useOnlineStatus";
 
 export default function ShoesPage() {
   const qc = useQueryClient();
   const navigate = useNavigate();
+  const online = useOnlineStatus();
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Shoe | null>(null);
 
@@ -86,21 +88,30 @@ export default function ShoesPage() {
     <div className="p-4 md:p-8 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Shoes</h1>
+          <h1 className="text-2xl font-semibold flex items-center gap-2">
+            Shoes
+            {!online && (
+              <span className="text-xs font-normal text-amber-700 bg-amber-100 border border-amber-200 rounded px-2 py-0.5">
+                Read-only
+              </span>
+            )}
+          </h1>
           <p className="text-muted-foreground text-sm">
             Your catalog. Click a shoe to manage its sizes and stock.
           </p>
         </div>
-        <Button
-          onClick={() => {
-            setEditing(null);
-            setFormOpen(true);
-          }}
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          <span className="hidden sm:inline">New shoe</span>
-          <span className="sm:hidden">New</span>
-        </Button>
+        {online && (
+          <Button
+            onClick={() => {
+              setEditing(null);
+              setFormOpen(true);
+            }}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            <span className="hidden sm:inline">New shoe</span>
+            <span className="sm:hidden">New</span>
+          </Button>
+        )}
       </div>
 
       {/* ---------- DESKTOP TABLE ---------- */}
@@ -184,25 +195,29 @@ export default function ShoesPage() {
                   >
                     <Eye className="h-4 w-4" />
                   </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => {
-                      setEditing(s);
-                      setFormOpen(true);
-                    }}
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <ConfirmDialog
-                    title={`Delete "${s.name}"?`}
-                    description="This will also delete all size variants and stock for this shoe."
-                    onConfirm={() => deleteMut.mutateAsync(s.id)}
-                  >
-                    <Button variant="ghost" size="icon">
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </ConfirmDialog>
+                  {online && (
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          setEditing(s);
+                          setFormOpen(true);
+                        }}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <ConfirmDialog
+                        title={`Delete "${s.name}"?`}
+                        description="This will also delete all size variants and stock for this shoe."
+                        onConfirm={() => deleteMut.mutateAsync(s.id)}
+                      >
+                        <Button variant="ghost" size="icon">
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </ConfirmDialog>
+                    </>
+                  )}
                 </TableCell>
               </TableRow>
             ))}
@@ -266,26 +281,30 @@ export default function ShoesPage() {
                 >
                   <Eye className="h-4 w-4" />
                 </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8"
-                  onClick={() => {
-                    setEditing(s);
-                    setFormOpen(true);
-                  }}
-                >
-                  <Pencil className="h-4 w-4" />
-                </Button>
-                <ConfirmDialog
-                  title={`Delete "${s.name}"?`}
-                  description="This will also delete all size variants and stock for this shoe."
-                  onConfirm={() => deleteMut.mutateAsync(s.id)}
-                >
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
-                </ConfirmDialog>
+                {online && (
+                  <>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => {
+                        setEditing(s);
+                        setFormOpen(true);
+                      }}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <ConfirmDialog
+                      title={`Delete "${s.name}"?`}
+                      description="This will also delete all size variants and stock for this shoe."
+                      onConfirm={() => deleteMut.mutateAsync(s.id)}
+                    >
+                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </ConfirmDialog>
+                  </>
+                )}
               </div>
             </div>
           </div>

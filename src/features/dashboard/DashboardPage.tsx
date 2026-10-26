@@ -7,6 +7,7 @@ import {
   Package,
   ArrowRight,
   AlertTriangle,
+  WifiOff,
 } from "lucide-react";
 
 import { getDashboard } from "../../api/reports";
@@ -30,26 +31,63 @@ import {
   TableRow,
 } from "../../components/ui/table";
 import { formatKsh } from "../../lib/format";
+import { useOnlineStatus } from "../../hooks/useOnlineStatus";
+import { formatLastSync } from "../../lib/cache";
 
 export default function DashboardPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const online = useOnlineStatus();
 
   const { data, isLoading } = useQuery({
     queryKey: ["reports-dashboard"],
     queryFn: getDashboard,
-    refetchInterval: 30_000, // refresh every 30s
+    refetchInterval: 30_000,
+    enabled: online,
   });
+
+  // Offline notice — dashboard metrics aren't meaningful offline
+  if (!online) {
+    return (
+      <div className="p-4 md:p-8">
+        <div className="border rounded-lg p-6 bg-amber-50 border-amber-200 text-center space-y-3 max-w-md mx-auto mt-12">
+          <WifiOff className="h-10 w-10 text-amber-600 mx-auto" />
+          <h2 className="font-semibold text-amber-900 text-lg">
+            Dashboard is unavailable offline
+          </h2>
+          <p className="text-sm text-amber-800">
+            Sales metrics and reports require a live connection.
+          </p>
+          <p className="text-xs text-amber-700">
+            Last synced: {formatLastSync()}
+          </p>
+          <div className="pt-3 flex gap-2 justify-center">
+            <Button onClick={() => navigate("/pos")}>
+              Open POS (browse only)
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => navigate("/shoes")}
+            >
+              Browse shoes
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (isLoading || !data) {
     return (
-      <div className="p-8 text-muted-foreground">Loading dashboard…</div>
+      <div className="p-4 md:p-8 text-muted-foreground">
+        Loading dashboard…
+      </div>
     );
   }
 
   return (
-    <div className="p-8 space-y-6">
-      <div className="flex items-start justify-between">
+    <div className="p-4 md:p-8 space-y-6">
+      <div className="flex items-start justify-between gap-2">
         <div>
           <h1 className="text-2xl font-semibold">
             Welcome back, {user?.username}
@@ -143,7 +181,11 @@ export default function DashboardPage() {
                       </TableCell>
                       <TableCell>{item.size}</TableCell>
                       <TableCell className="text-right">
-                        <Badge variant={item.quantity === 0 ? "destructive" : "secondary"}>
+                        <Badge
+                          variant={
+                            item.quantity === 0 ? "destructive" : "secondary"
+                          }
+                        >
                           {item.quantity}
                         </Badge>
                       </TableCell>

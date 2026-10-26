@@ -38,6 +38,9 @@ import {
 import { formatKsh } from "../../lib/format";
 import { cn } from "../../lib/utils";
 import { useMediaQuery } from "../../hooks/useMediaQuery";
+import { useOnlineStatus } from "@/hooks/useOnlineStatus";
+import { formatLastSync } from "@/lib/cache";
+
 
 type CartLine = {
   variantId: number;
@@ -61,7 +64,7 @@ export default function POSPage() {
 
   const [sizesSheetShoe, setSizesSheetShoe] = useState<Shoe | null>(null);
   const [cartSheetOpen, setCartSheetOpen] = useState(false);
-
+const online = useOnlineStatus();
   const { data: shoes = [], isLoading } = useQuery({
     queryKey: ["shoes"],
     queryFn: listShoes,
@@ -362,23 +365,26 @@ export default function POSPage() {
       </div>
 
       <Button
-        className="w-full h-12 text-base"
-        size="lg"
-        onClick={completeSale}
-        disabled={cart.length === 0 || checkoutMut.isPending}
-      >
-        {checkoutMut.isPending ? (
-          <>
-            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            Processing…
-          </>
-        ) : (
-          <>
-            <Check className="h-4 w-4 mr-2" />
-            Complete · {formatKsh(cartTotal)}
-          </>
-        )}
-      </Button>
+  className="w-full h-12 text-base"
+  size="lg"
+  onClick={completeSale}
+  disabled={cart.length === 0 || checkoutMut.isPending || !online}
+  title={!online ? "Requires internet connection" : undefined}
+>
+  {!online ? (
+    <>Offline — can't complete</>
+  ) : checkoutMut.isPending ? (
+    <>
+      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+      Processing…
+    </>
+  ) : (
+    <>
+      <Check className="h-4 w-4 mr-2" />
+      Complete · {formatKsh(cartTotal)}
+    </>
+  )}
+</Button>
     </div>
   );
 

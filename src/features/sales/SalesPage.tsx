@@ -14,9 +14,15 @@ import {
   TableRow,
 } from "../../components/ui/table";
 import { formatKsh } from "../../lib/format";
+import OfflineNotice from "../../components/OfflineNotice";
+import { useOnlineStatus } from "../../hooks/useOnlineStatus";
 
 export default function SalesPage() {
   const navigate = useNavigate();
+  const online = useOnlineStatus();
+
+  if (!online) return <OfflineNotice pageName="Sales" />;
+
   const { data: sales = [], isLoading } = useQuery({
     queryKey: ["sales"],
     queryFn: listSales,

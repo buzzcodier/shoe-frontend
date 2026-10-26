@@ -40,12 +40,14 @@ import ConfirmDialog from "../../components/ConfirmDialog";
 import { formatKsh } from "../../lib/format";
 import VariantForm from "./VariantForm";
 import PackTemplateForm from "./PackTemplateForm";
+import { useOnlineStatus } from "../../hooks/useOnlineStatus";
 
 export default function ShoeDetailPage() {
   const { id } = useParams<{ id: string }>();
   const shoeId = Number(id);
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const online = useOnlineStatus();
 
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<ShoeVariant | null>(null);
@@ -144,12 +146,12 @@ export default function ShoeDetailPage() {
   });
 
   if (isLoading) {
-    return <div className="p-8 text-muted-foreground">Loading…</div>;
+    return <div className="p-4 md:p-8 text-muted-foreground">Loading…</div>;
   }
 
   if (isError || !shoe) {
     return (
-      <div className="p-8 space-y-4">
+      <div className="p-4 md:p-8 space-y-4">
         <p className="text-destructive">Could not load shoe.</p>
         <Button variant="outline" onClick={() => navigate("/shoes")}>
           <ArrowLeft className="h-4 w-4 mr-2" />
@@ -163,7 +165,7 @@ export default function ShoeDetailPage() {
   const totalStock = shoe.total_stock ?? 0;
 
   return (
-    <div className="p-8 space-y-6">
+    <div className="p-4 md:p-8 space-y-6">
       <Link
         to="/shoes"
         className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground"
@@ -174,7 +176,14 @@ export default function ShoeDetailPage() {
 
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold">{shoe.name}</h1>
+          <h1 className="text-2xl font-semibold flex items-center gap-2 flex-wrap">
+            {shoe.name}
+            {!online && (
+              <span className="text-xs font-normal text-amber-700 bg-amber-100 border border-amber-200 rounded px-2 py-0.5">
+                Read-only
+              </span>
+            )}
+          </h1>
           <p className="text-muted-foreground text-sm">
             {shoe.company_name} · {shoe.category_name}
             {shoe.model_number ? ` · ${shoe.model_number}` : ""}
@@ -243,18 +252,20 @@ export default function ShoeDetailPage() {
             Each size has its own quantity. Selling a pair reduces this count.
           </p>
         </div>
-        <Button
-          onClick={() => {
-            setEditing(null);
-            setFormOpen(true);
-          }}
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Add size
-        </Button>
+        {online && (
+          <Button
+            onClick={() => {
+              setEditing(null);
+              setFormOpen(true);
+            }}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add size
+          </Button>
+        )}
       </div>
 
-      <div className="border rounded-md bg-card">
+      <div className="border rounded-md bg-card overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
@@ -295,25 +306,31 @@ export default function ShoeDetailPage() {
                   )}
                 </TableCell>
                 <TableCell className="text-right">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => {
-                      setEditing(v);
-                      setFormOpen(true);
-                    }}
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <ConfirmDialog
-                    title={`Delete size ${v.size}?`}
-                    description="This removes the size and its stock count."
-                    onConfirm={() => deleteMut.mutateAsync(v.id)}
-                  >
-                    <Button variant="ghost" size="icon">
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </ConfirmDialog>
+                  {online ? (
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          setEditing(v);
+                          setFormOpen(true);
+                        }}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <ConfirmDialog
+                        title={`Delete size ${v.size}?`}
+                        description="This removes the size and its stock count."
+                        onConfirm={() => deleteMut.mutateAsync(v.id)}
+                      >
+                        <Button variant="ghost" size="icon">
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </ConfirmDialog>
+                    </>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">—</span>
+                  )}
                 </TableCell>
               </TableRow>
             ))}
@@ -344,24 +361,26 @@ export default function ShoeDetailPage() {
             Define how this shoe arrives in bulk (cartons, sacks, bags).
           </p>
         </div>
-        <Button
-          onClick={() => {
-            setEditingPack(null);
-            setPackFormOpen(true);
-          }}
-          disabled={variants.length === 0}
-          title={
-            variants.length === 0
-              ? "Add at least one size before creating a pack template"
-              : undefined
-          }
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          New template
-        </Button>
+        {online && (
+          <Button
+            onClick={() => {
+              setEditingPack(null);
+              setPackFormOpen(true);
+            }}
+            disabled={variants.length === 0}
+            title={
+              variants.length === 0
+                ? "Add at least one size before creating a pack template"
+                : undefined
+            }
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            New template
+          </Button>
+        )}
       </div>
 
-      <div className="border rounded-md bg-card">
+      <div className="border rounded-md bg-card overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
@@ -396,25 +415,31 @@ export default function ShoeDetailPage() {
                   <Badge variant="secondary">{t.total_pairs}</Badge>
                 </TableCell>
                 <TableCell className="text-right">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => {
-                      setEditingPack(t);
-                      setPackFormOpen(true);
-                    }}
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </Button>
-                  <ConfirmDialog
-                    title={`Delete "${t.name}"?`}
-                    description="This template can no longer be used for stock receiving."
-                    onConfirm={() => deletePackMut.mutateAsync(t.id)}
-                  >
-                    <Button variant="ghost" size="icon">
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </ConfirmDialog>
+                  {online ? (
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          setEditingPack(t);
+                          setPackFormOpen(true);
+                        }}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <ConfirmDialog
+                        title={`Delete "${t.name}"?`}
+                        description="This template can no longer be used for stock receiving."
+                        onConfirm={() => deletePackMut.mutateAsync(t.id)}
+                      >
+                        <Button variant="ghost" size="icon">
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </ConfirmDialog>
+                    </>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">—</span>
+                  )}
                 </TableCell>
               </TableRow>
             ))}

@@ -24,6 +24,8 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
 import { Separator } from "../../components/ui/separator";
 import { formatKsh } from "../../lib/format";
+import OfflineNotice from "../../components/OfflineNotice";
+import { useOnlineStatus } from "../../hooks/useOnlineStatus";
 
 type SimpleLine = {
   kind: "simple";
@@ -53,6 +55,7 @@ const nextKey = () => `line-${Date.now()}-${counter++}`;
 export default function ReceiveStockPage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const online = useOnlineStatus();
 
   const [supplierId, setSupplierId] = useState<number | null>(null);
   const [notes, setNotes] = useState("");
@@ -61,10 +64,12 @@ export default function ReceiveStockPage() {
   const { data: suppliers = [] } = useQuery({
     queryKey: ["suppliers"],
     queryFn: listSuppliers,
+    enabled: online,
   });
   const { data: shoes = [] } = useQuery({
     queryKey: ["shoes"],
     queryFn: listShoes,
+    enabled: online,
   });
 
   const shoeIds = Array.from(new Set(lines.map((l) => l.shoeId)));
@@ -76,7 +81,7 @@ export default function ReceiveStockPage() {
       );
       return results.flat();
     },
-    enabled: shoeIds.length > 0,
+    enabled: shoeIds.length > 0 && online,
   });
 
   const templatesForShoe = (shoeId: number) =>
@@ -188,6 +193,9 @@ export default function ReceiveStockPage() {
   // Resolve labels
   const currentSupplierName =
     suppliers.find((s) => s.id === supplierId)?.name ?? "";
+
+  // ✅ Early return AFTER all hooks — safe with React's Rules of Hooks
+  if (!online) return <OfflineNotice pageName="Receive stock" />;
 
   return (
     <div className="p-4 md:p-8 space-y-6 max-w-5xl">

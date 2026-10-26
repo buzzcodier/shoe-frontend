@@ -8,9 +8,15 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "../../components/ui/table";
 import { formatKsh } from "../../lib/format";
+import OfflineNotice from "../../components/OfflineNotice";
+import { useOnlineStatus } from "../../hooks/useOnlineStatus";
 
 export default function PurchasesPage() {
   const navigate = useNavigate();
+  const online = useOnlineStatus();
+
+  if (!online) return <OfflineNotice pageName="Purchases" />;
+
   const { data: purchases = [], isLoading } = useQuery({
     queryKey: ["purchases"],
     queryFn: listPurchases,
