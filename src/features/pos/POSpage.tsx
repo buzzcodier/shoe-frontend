@@ -39,7 +39,6 @@ import { formatKsh } from "../../lib/format";
 import { cn } from "../../lib/utils";
 import { useMediaQuery } from "../../hooks/useMediaQuery";
 import { useOnlineStatus } from "@/hooks/useOnlineStatus";
-import { formatLastSync } from "@/lib/cache";
 
 
 type CartLine = {
