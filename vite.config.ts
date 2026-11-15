@@ -70,11 +70,13 @@ workbox: {
       },
     }),
   ],
-  resolve: {
-    alias: {
-      "@": path.resolve(__dirname, "./src"),
-    },
+ resolve: {
+  alias: {
+    "@": path.resolve(__dirname, "./src"),
   },
+  // Add this:
+  dedupe: ["react", "react-dom", "react/jsx-runtime", "react/jsx-dev-runtime"],
+},
   server: {
     port: 5173,
   },
