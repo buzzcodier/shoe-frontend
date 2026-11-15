@@ -77,6 +77,9 @@ workbox: {
   // Add this:
   dedupe: ["react", "react-dom", "react/jsx-runtime", "react/jsx-dev-runtime"],
 },
+ optimizeDeps: {
+    include: ["react", "react-dom", "react/jsx-runtime", "react-dom/client"],
+  },
   server: {
     port: 5173,
   },
