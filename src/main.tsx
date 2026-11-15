@@ -5,8 +5,12 @@ import App from "./App";
 import "./index.css";
 
 function PWAUpdater() {
-  // Register the service worker — handles install, update, offline cache
-  useRegisterSW({ immediate: true });
+  // Destructure with underscore-prefixed names to satisfy lint rules
+  const {
+    needRefresh: _needRefresh,
+    updateServiceWorker: _updateServiceWorker,
+  } = useRegisterSW({ immediate: true });
+
   return null;
 }
 
