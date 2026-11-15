@@ -1,4 +1,6 @@
 import { api } from "./client";
+// client.ts
+export const API_URL = import.meta.env.VITE_API_URL;
 
 export type Gender = "MALE" | "FEMALE" | "UNISEX" | "CHILDREN";
 
@@ -51,12 +53,37 @@ import { CACHE_KEYS, getCache, setCache } from "@/lib/cache";
 
 export async function listShoes(): Promise<Shoe[]> {
   try {
-    const { data } = await api.get("/shoes/shoes/");
-    const shoes = data.results ?? data;
-    setCache(CACHE_KEYS.shoes, shoes);
-    return shoes;
+    const all: Shoe[] = [];
+    let url: string | null = "/shoes/shoes/";
+
+    while (url) {
+      const { data } = await api.get(url);
+
+      if (Array.isArray(data)) {
+        all.push(...data);
+        break;
+      }
+
+      all.push(...(data.results ?? []));
+
+      // DRF returns next as an absolute URL:
+      //   https://shoe-shop-api-smr3.onrender.com/api/shoes/shoes/?page=2
+      // Our axios baseURL already is ".../api", so we strip origin + "/api"
+      // to get "/shoes/shoes/?page=2" and let axios prepend baseURL.
+      if (data.next) {
+        const nextAbs = data.next as string;
+        const base = API_URL?.replace(/\/+$/, "") ?? ""; // trim trailing slashes
+        url = nextAbs.startsWith(base)
+          ? nextAbs.slice(base.length) || "/"
+          : nextAbs.replace(/^https?:\/\/[^/]+\/api/, "");
+      } else {
+        url = null;
+      }
+    }
+
+    setCache(CACHE_KEYS.shoes, all);
+    return all;
   } catch (err: any) {
-    // Network error (no response) → fall back to cache
     if (!err.response) {
       const cached = getCache<Shoe[]>(CACHE_KEYS.shoes);
       if (cached) return cached;
